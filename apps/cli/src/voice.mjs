@@ -42,12 +42,15 @@ export async function buildVoice(project, { redo = [] } = {}) {
   if (voice.engine === "recorded") return recorded(project, voice, lines, dir)
 
   const jobs = lines.map((scene, n) => {
+    // A scene with its own recording ("sayFile") uses it, whatever the engine.
+    const own = ownRecording(project, scene, dir)
     const text = pronounce(scene.say, voice.pronounce)
-    return { scene, n, text, file: join(dir, `${sha(text, key)}.wav`) }
+    return { scene, n, text, own: Boolean(own), file: own ?? join(dir, `${sha(text, key)}.wav`) }
   })
-  for (const number of redo) { const job = jobs[number - 1]; if (job && existsSync(job.file)) rmSync(job.file) }
+  for (const number of redo) { const job = jobs[number - 1]; if (job && !job.own && existsSync(job.file)) rmSync(job.file) }
   const todo = jobs.filter((job) => !existsSync(job.file))
-  log(`voice: ${jobs.length} lines, ${jobs.length - todo.length} cached, ${todo.length} to generate (${voice.engine})`)
+  const recordedCount = jobs.filter((job) => job.own).length
+  log(`voice: ${jobs.length} lines, ${recordedCount ? `${recordedCount} recorded, ` : ""}${jobs.length - todo.length - recordedCount} cached, ${todo.length} to generate (${voice.engine})`)
 
   let session = null
   if (todo.length && voice.engine === "voicestudio") session = await voiceStudio(project, voice)
@@ -73,6 +76,17 @@ function finish(input, output) {
     "-ar", "44100", "-ac", "1", output])
 }
 
+/** The prepared audio of a scene's own recording, or null if it has none.
+ *  Cached by the recording's content, so a new take is picked up at once. */
+export function ownRecording(project, scene, dir) {
+  if (!scene.sayFile) return null
+  const source = project.at(scene.sayFile)
+  if (!existsSync(source)) throw new UserError(`scene ${scene.index + 1}: its recording ${scene.sayFile} does not exist`)
+  const file = join(dir, `${sha(readFileSync(source))}.wav`)
+  if (!existsSync(file)) finish(source, file)
+  return file
+}
+
 function sayLine(voice, text, out) {
   if (!which("say")) throw new UserError('voice.engine "say" needs macOS. Use "command", "voicestudio" or "recorded" instead.')
   const aiff = out.replace(/\.wav$/, ".aiff")
@@ -89,15 +103,21 @@ function commandLine(voice, text, out) {
 function recorded(project, voice, lines, dir) {
   const folder = project.at(voice.folder ?? "voice")
   let files = existsSync(folder) ? readdirSync(folder).filter((f) => /^\d+.*\.(wav|m4a|mp3|aiff|flac)$/i.test(f)).sort((a, b) => parseInt(a) - parseInt(b)).map((f) => join(folder, f)) : []
-  if (voice.take) files = splitTake(project.at(voice.take), lines.length, ensureDir(join(dir, "take")))
-  if (files.length !== lines.length) {
-    throw new UserError(`the script has ${lines.length} spoken lines but ${files.length} recording${files.length === 1 ? "" : "s"} were found in ${folder}.\n` +
+  // Lines recorded one at a time (in the Studio) carry their own file. The
+  // numbered files then cover either every line, or just the remaining ones.
+  const without = lines.filter((scene) => !scene.sayFile)
+  if (voice.take) files = splitTake(project.at(voice.take), without.length, ensureDir(join(dir, "take")))
+  const byPosition = files.length === lines.length
+  if (!byPosition && files.length !== without.length) {
+    throw new UserError(`the script has ${without.length === lines.length ? lines.length : `${without.length} spoken lines without their own recording (of ${lines.length})`}${without.length === lines.length ? " spoken lines" : ""} but ${files.length} recording${files.length === 1 ? "" : "s"} were found in ${folder}.\n` +
       `Name them 01.wav, 02.wav ... in script order, or set voice.take to one recording of all lines with a pause between them.\n` +
       `Print the script with \`comms script\`.`)
   }
+  let next = 0
   return lines.map((scene, n) => {
-    const file = join(dir, `${sha(readFileSync(files[n]))}.wav`)
-    if (!existsSync(file)) finish(files[n], file)
+    const source = byPosition ? files[n] : scene.sayFile ? null : files[next++]
+    let file = ownRecording(project, scene, dir)
+    if (!file) { file = join(dir, `${sha(readFileSync(source))}.wav`); if (!existsSync(file)) finish(source, file) }
     return { index: scene.index, text: scene.say, file, seconds: duration(file) }
   })
 }

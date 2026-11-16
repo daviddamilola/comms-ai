@@ -68,6 +68,7 @@ export function validate(project, { checkFiles = false } = {}) {
       if (!scene.src) problems.push(`${where}: a ${scene.type} needs "src"`)
       else if (checkFiles && !existsSync(project.at(scene.src))) problems.push(`${where}: ${scene.src} does not exist` + (scene.type === "clip" ? " (record it with `comms record`?)" : ""))
     }
+    if (scene.sayFile && checkFiles && !existsSync(project.at(scene.sayFile))) problems.push(`${where}: its voice recording ${scene.sayFile} does not exist`)
     if (scene.type === "clip") {
       if (scene.from != null && scene.to != null && !(scene.to > scene.from)) problems.push(`${where}: "to" must be after "from"`)
       if (scene.speed != null && !(scene.speed > 0)) problems.push(`${where}: "speed" must be positive`)

@@ -6,7 +6,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { chromePath, sleep, UserError } from "./util.mjs"
 
-export async function launch({ width, height }) {
+export async function launch({ width, height, args = [] }) {
   const bin = chromePath()
   if (!bin) throw new UserError("Chrome was not found. Install Google Chrome or set COMMS_CHROME. Run `comms doctor`.")
   const profile = mkdtempSync(join(tmpdir(), "comms-chrome-"))
@@ -15,7 +15,7 @@ export async function launch({ width, height }) {
   const child = spawn(bin, [
     "--headless=new", "--remote-debugging-port=0", `--user-data-dir=${profile}`,
     `--window-size=${width},${height}`, "--hide-scrollbars", "--no-first-run",
-    "--force-device-scale-factor=1", "--disable-background-timer-throttling", "about:blank",
+    "--force-device-scale-factor=1", "--disable-background-timer-throttling", ...args, "about:blank",
   ], { stdio: "ignore" })
   const close = () => { try { child.kill("SIGKILL") } catch {} ; try { rmSync(profile, { recursive: true, force: true }) } catch {} }
   process.once("exit", close)

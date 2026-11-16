@@ -45,6 +45,26 @@ Or one take of the whole script, with a clear one-second pause between lines:
 The take is split on its pauses. If the number of parts does not match the
 number of lines, the build stops and says so.
 
+## Recording single lines (any engine)
+
+Any scene can carry its own recording, which is used instead of the
+generated voice for that line:
+
+```json
+{ "type": "card", "title": "...", "say": "The line as written.", "sayFile": "voice/recordings/take.webm" }
+```
+
+The easy way to make one is the Studio (`comms ui <project>`): select the
+scene, press **Record this line**, read the line, press **Stop and keep**.
+Listen back, record again or remove it; then build. The browser asks for the
+microphone the first time. Takes are saved in the project's
+`voice/recordings/` folder, which is git-ignored.
+
+This works with every engine, so you can draft with `say`, then re-record
+only the lines that matter, or fix one line of a finished video without
+touching the others. With the `recorded` engine, numbered files (`01.wav` …)
+cover either every line or just the lines that have no recording of their own.
+
 ## `voicestudio`: your voice, cloned
 
 Uses [VoiceStudio](https://github.com/daviddamilola/VoiceStudio) running on
@@ -104,6 +124,11 @@ and that only one backend is running (`scripts/voicestudio.sh status`).
 On a machine with 32 GB or more none of this matters.
 A 13-line script took about 20 minutes; because lines are cached, later
 builds are instant unless you change a line.
+
+Measured on a 16 GB M2 Pro: on a quiet machine, 13 lines in about 20 minutes
+(40–130 s each); with an editor, a browser and two other tools open, one
+cold line took 22 minutes, nearly all of it warm-up. Draft with `say` and
+switch to the cloned voice for the final build only.
 
 ## `command`: any other text-to-speech
 

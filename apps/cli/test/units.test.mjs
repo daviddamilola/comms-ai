@@ -93,3 +93,9 @@ test("postForm waits past fetch's five-minute limit and returns status and bytes
   assert.equal(answer.status, 200)
   assert.equal(answer.body.toString(), "got true")
 })
+
+test("a missing per-scene recording is a problem at build time", () => {
+  const project = normalise({ scenes: [{ type: "card", title: "x", say: "Hello", sayFile: "voice/recordings/nope.webm" }] }, "/tmp/x")
+  assert.deepEqual(validate(project), [])
+  assert.match(validate(project, { checkFiles: true })[0], /voice recording/)
+})

@@ -35,6 +35,7 @@ Scenes play in order. Any scene may have:
 |---|---|
 | `say` | The voiceover line spoken during this scene. |
 | `caption` | Text shown in a box at the bottom (not on cards). |
+| `sayFile` | A recording of this scene's line, used instead of the generated voice. See [voice.md](voice.md). |
 
 **The voice sets the pace.** If a line is longer than its scene, a card or
 image stays up longer, and a clip is slowed down (to half speed at most) and
