@@ -22,8 +22,18 @@ Working rules, each learned the hard way (see `docs/lessons.md`):
 - Do not put the user's private details into a video, a commit or a request
   to an outside service.
 
-Code layout: `bin/comms.mjs` (commands), `src/record.mjs` + `src/locator.mjs`
-+ `src/chrome.mjs` (filming), `src/voice.mjs`, `src/music.mjs`,
-`src/plan.mjs` (timing), `src/render.mjs`, `src/text.mjs` (cards, captions),
-`src/draft.mjs` (`init`), `src/doctor.mjs`. No npm dependencies; tests are
-`npm test`.
+Code layout: two apps in an npm workspace.
+
+- `apps/cli`: the `comms` command. `bin/comms.mjs` (commands),
+  `src/record.mjs` + `src/locator.mjs` + `src/chrome.mjs` (filming),
+  `src/voice.mjs`, `src/music.mjs`, `src/plan.mjs` (timing),
+  `src/render.mjs`, `src/text.mjs` (cards, captions), `src/draft.mjs`
+  (`init`), `src/doctor.mjs`. No npm dependencies.
+- `apps/studio`: the Studio opened by `comms ui`. `server/index.mjs` is a
+  local server (no dependencies) that edits `video.json`, makes thumbnails
+  and runs builds through the command line; `src/` is the React page.
+  After changing the page run `npm run build`, and check it by loading it
+  in a browser: a page that compiles can still crash on load.
+
+Tests are `npm test` at the root. Do not let two agents edit the same app at
+once: they overwrite each other's files.

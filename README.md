@@ -11,8 +11,14 @@ video.json ──► comms record ──► clips/*.mp4     (films your web app 
                                 out/contact-sheet.png, out/report.json
 ```
 
-Everything runs on your machine. There are no npm dependencies and nothing is
-uploaded.
+Everything runs on your machine and nothing is uploaded.
+
+The repository holds two apps:
+
+| App | What it is |
+|---|---|
+| [`apps/cli`](apps/cli) | The `comms` command line. Does all the work; has no npm dependencies. |
+| [`apps/studio`](apps/studio) | The Studio: a local web page (React) for editing a video's storyboard, building it and watching the result. Opened with `comms ui`. |
 
 ## Install
 
@@ -21,7 +27,9 @@ You need Node 22+, ffmpeg and Chrome.
 ```sh
 git clone https://github.com/daviddamilola/comms-ai && cd comms-ai
 brew bundle            # macOS: node, ffmpeg, Google Chrome
-npm link               # puts `comms` on your PATH (or run `node bin/comms.mjs`)
+npm install            # only needed for the Studio
+npm run build          # builds the Studio's page
+npm link               # puts `comms` on your PATH (or run `node apps/cli/bin/comms.mjs`)
 comms doctor           # checks every dependency and says how to fix what is missing
 ```
 
@@ -74,6 +82,29 @@ comms build videos/launch
 `build` prints where the video is and writes a contact sheet with one frame
 per scene. Look at the sheet and listen to the video before sharing it.
 
+## The Studio
+
+```sh
+comms ui videos/launch
+```
+
+opens a page in your browser for that project:
+
+- **Storyboard**: every scene as a tile with a thumbnail. Reorder with the
+  arrows or by dragging, add cards, clips and images, duplicate, delete, undo.
+- **Scene editor**: titles, captions, voice lines, which file a clip uses and
+  which part of it. Changes are saved to `video.json` as you type.
+- **Build and preview**: one button builds the video (untick "With voiceover"
+  for a quick draft), shows the log while it runs, then plays the result
+  beside its warnings and contact sheet. Problems that would stop a build are
+  listed, and the button stays off until they are fixed.
+- **Video settings**: title, brand, accent colour, voice and music.
+
+The Studio edits the same `video.json` and runs the same commands as the
+command line, so you can switch between them freely. It listens on your own
+machine only (`127.0.0.1`). Recording your app and re-doing single voice
+lines are still done from the command line.
+
 ## Commands
 
 | Command | What it does |
@@ -85,6 +116,7 @@ per scene. Look at the sheet and listen to the video before sharing it.
 | `comms voice <project>` | Generates the voiceover only; `--redo 3,5` regenerates lines |
 | `comms build <project>` | Voice, music and render; `--redo 3,5`, `--no-voice` |
 | `comms sheet <video>` | Contact sheet of any video; `--every 5` |
+| `comms ui <project>` | Opens the Studio; `--port 4400`, `--no-open` |
 
 Every command exits non-zero when it fails.
 
@@ -111,5 +143,8 @@ Lines are cached, so changing one sentence regenerates one sentence. See
 ## Development
 
 ```sh
-npm test
+npm install
+npm test                         # both apps
+npm run dev -w @comms-ai/studio  # the Studio's page with live reload on :4401
+comms ui examples/demo --no-open # ...and its server on :4400, which the page talks to
 ```
