@@ -1,0 +1,111 @@
+# Voiceover
+
+Give a scene a `say` line and it is spoken during that scene. Print the whole
+script with `comms script <project>`.
+
+```json
+"voice": { "engine": "say", "voice": "Daniel", "rate": 172,
+           "pronounce": { "DOI": "D O I", "Tersect": "Ter-sect" } }
+```
+
+`pronounce` changes how words are *spoken* without changing captions. Use it
+for acronyms and product names the voice gets wrong.
+
+Shared settings: `lead` (seconds of scene before the voice starts, default
+0.3), `tail` (seconds after it ends, 0.4), `volume` (0.95).
+
+Every line is trimmed, brought to the same loudness and cached. Changing one
+line regenerates one line. `comms voice <project> --redo 3,5` regenerates
+lines 3 and 5 when a take sounds wrong.
+
+## `say`: built-in macOS voices
+
+Instant and free, and clearly synthetic. `say -v '?'` lists the voices.
+`rate` is words per minute.
+
+## `recorded`: read it yourself
+
+The best-sounding option, and the fastest.
+
+One file per line, named in script order:
+
+```
+voice/01.wav  voice/02.wav  voice/03.wav ...
+```
+```json
+"voice": { "engine": "recorded" }
+```
+
+Or one take of the whole script, with a clear one-second pause between lines:
+
+```json
+"voice": { "engine": "recorded", "take": "voice/take.m4a" }
+```
+
+The take is split on its pauses. If the number of parts does not match the
+number of lines, the build stops and says so.
+
+## `voicestudio`: your voice, cloned
+
+Uses [VoiceStudio](https://github.com/daviddamilola/VoiceStudio) running on
+your machine. Nothing is uploaded.
+
+```json
+"voice": {
+  "engine": "voicestudio",
+  "reference": "voice/reference.m4a",
+  "referenceText": "Exactly what you said in the reference recording.",
+  "engineId": "voxcpm2",
+  "seed": 7
+}
+```
+
+Or, once a profile exists, `"profile": "78df04ca"` instead of `reference`.
+
+**Set up once**
+
+```sh
+scripts/voicestudio.sh install     # clones VoiceStudio, installs Python deps and VoxCPM
+scripts/voicestudio.sh start       # serves http://localhost:3900 with the VoxCPM2 engine
+comms doctor                       # should now report VoiceStudio as ok
+scripts/voicestudio.sh stop        # when you are done: it holds several GB of memory
+```
+
+The first generated line downloads the model (about 5 GB for VoxCPM2).
+
+**Record the reference**
+
+10–20 seconds of you speaking in the tone you want, in a quiet room, the
+microphone a hand's width away, with half a second of silence at each end.
+Read sentences from your own script, and say product names the way you want
+them heard: the clone copies your pronunciation. Quiet recordings are
+levelled automatically. Reference recordings are personal data and are
+git-ignored by default (`voice/reference.*`).
+
+**Licences: check before you publish**
+
+| Engine | Licence | Fine for an advert? |
+|---|---|---|
+| `voxcpm2` (VoxCPM2) | Apache-2.0 | Yes |
+| `omnivoice` (VoiceStudio's default) | CC-BY-NC weights | No: non-commercial only |
+
+VoiceStudio lists each model's licence in its Model Catalogue. Clone only
+voices you have the right to use. Generated audio carries an inaudible
+AudioSeal watermark marking it as AI-generated.
+
+**Speed and memory**
+
+On a 16 GB Apple Silicon Mac expect 1–2 minutes per line once the model is
+warm, and several minutes for the first. The model needs the memory to
+itself: with Docker Desktop running, warm-up steps took 100 seconds each
+instead of 4. Quit Docker Desktop, local LLMs and heavy browsers first.
+A 13-line script took about 20 minutes; because lines are cached, later
+builds are instant unless you change a line.
+
+## `command`: any other text-to-speech
+
+```json
+"voice": { "engine": "command", "command": "espeak-ng -w {out} {text}" }
+```
+
+`{text}` and `{out}` (a `.wav` path) are filled in for each line.
