@@ -12,6 +12,7 @@
 // Every line is cached by its text and voice settings: changing one line
 // regenerates one line.
 import { copyFileSync, existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs"
+import { request as httpRequest } from "node:http"
 import { basename, join } from "node:path"
 import { duration, ensureDir, ffmpeg, ffmpegPath, log, memory, round, run, sha, UserError, warn, which } from "./util.mjs"
 
@@ -144,7 +145,13 @@ async function voiceStudio(project, voice) {
   const mem = memory()
   // A 5 GB speech model on a 16 GB machine swaps badly next to Docker or a
   // local LLM: the first warm-up step took 100 s instead of 4.
-  if (mem.totalGb <= 16.5) warn(`this machine has ${Math.round(mem.totalGb)} GB of memory. Quit Docker Desktop, local LLMs and other heavy apps while voice lines generate, or each line can take minutes.`)
+  if (mem.totalGb <= 16.5) {
+    // Name what is actually running: "quit heavy apps" is easy to skip, and a
+    // Docker Desktop that was asked to quit may still be there.
+    const hogs = [["com.docker.backend", "Docker Desktop"], ["ollama runner", "an Ollama model"]].filter(([name]) => run("pgrep", ["-f", name], { allowFail: true }).status === 0).map(([, label]) => label)
+    warn(`this machine has ${Math.round(mem.totalGb)} GB of memory, and a cloning model needs most of it.` +
+      (hogs.length ? ` ${hogs.join(" and ")} ${hogs.length === 1 ? "is" : "are"} running: quit ${hogs.length === 1 ? "it" : "them"} first, or each line can take many minutes.` : " Keep other heavy apps closed while lines generate."))
+  }
 
   let profile = voice.profile
   if (!profile) {
@@ -174,12 +181,31 @@ async function voiceStudio(project, voice) {
       form.set("text", text); form.set("profile_id", profile); form.set("language", voice.language ?? "English")
       if (voice.engineId) form.set("engine", voice.engineId)
       if (voice.seed != null) form.set("seed", String(voice.seed))
-      const response = await fetch(`${url}/generate`, { method: "POST", body: form, signal: AbortSignal.timeout((voice.timeout ?? 1800) * 1000) })
+      const response = await postForm(`${url}/generate`, form, (voice.timeout ?? 1800) * 1000)
       // Check the status before saving: an error body saved as .wav is not audio.
-      if (!response.ok) throw new Error(`VoiceStudio failed on "${text.slice(0, 40)}": ${response.status} ${(await response.text()).slice(0, 300)}`)
-      writeFileSync(out, Buffer.from(await response.arrayBuffer()))
+      if (response.status !== 200) throw new Error(`VoiceStudio failed on "${text.slice(0, 40)}": ${response.status} ${response.body.toString("utf8").slice(0, 300)}`)
+      writeFileSync(out, response.body)
     },
   }
+}
+
+/** POST a form and wait as long as it takes. Not fetch(): Node's fetch gives
+ *  up after five minutes without response headers ("fetch failed"), and the
+ *  first line from a cold speech model takes longer than that. */
+export async function postForm(url, form, timeoutMs) {
+  const encoded = new Response(form)
+  const body = Buffer.from(await encoded.arrayBuffer())
+  return new Promise((resolve, reject) => {
+    const request = httpRequest(url, { method: "POST", headers: { "content-type": encoded.headers.get("content-type"), "content-length": body.length } }, (response) => {
+      const chunks = []
+      response.on("data", (chunk) => chunks.push(chunk))
+      response.on("end", () => resolve({ status: response.statusCode, body: Buffer.concat(chunks) }))
+      response.on("error", reject)
+    })
+    request.setTimeout(timeoutMs, () => request.destroy(new Error(`no answer from ${url} after ${Math.round(timeoutMs / 60000)} minutes`)))
+    request.on("error", reject)
+    request.end(body)
+  })
 }
 
 /** Copy the finished lines somewhere readable (out/voice/01.wav ...). */

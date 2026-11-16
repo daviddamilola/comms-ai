@@ -95,10 +95,13 @@ AudioSeal watermark marking it as AI-generated.
 
 **Speed and memory**
 
-On a 16 GB Apple Silicon Mac expect 1–2 minutes per line once the model is
-warm, and several minutes for the first. The model needs the memory to
-itself: with Docker Desktop running, warm-up steps took 100 seconds each
-instead of 4. Quit Docker Desktop, local LLMs and heavy browsers first.
+VoxCPM2 holds about 12 GB of memory on Apple Silicon. On a 16 GB Mac that
+leaves almost nothing, so expect 1–2 minutes per line once the model is warm
+and several minutes for the first, and close everything you can: with Docker
+Desktop running, warm-up steps took 100 seconds each instead of 4. Check
+that Docker has really quit (`pgrep -f com.docker.backend` prints nothing),
+and that only one backend is running (`scripts/voicestudio.sh status`).
+On a machine with 32 GB or more none of this matters.
 A 13-line script took about 20 minutes; because lines are cached, later
 builds are instant unless you change a line.
 

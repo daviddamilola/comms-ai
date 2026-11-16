@@ -77,3 +77,19 @@ test("the music loop is seamless, normalised and a valid WAV", () => {
   assert.equal(wav.toString("ascii", 0, 4), "RIFF")
   assert.equal(wav.length, 44 + samples.length * 2)
 })
+
+test("postForm waits past fetch's five-minute limit and returns status and bytes", async () => {
+  const { createServer } = await import("node:http")
+  const { postForm } = await import("../src/voice.mjs")
+  const server = createServer((request, response) => {
+    let size = 0
+    request.on("data", (chunk) => { size += chunk.length })
+    request.on("end", () => { response.writeHead(request.headers["content-type"].startsWith("multipart/form-data") ? 200 : 400); response.end(`got ${size > 0}`) })
+  })
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve))
+  const form = new FormData(); form.set("text", "hello"); form.set("file", new Blob(["abc"]), "a.wav")
+  const answer = await postForm(`http://127.0.0.1:${server.address().port}/generate`, form, 5000)
+  server.close()
+  assert.equal(answer.status, 200)
+  assert.equal(answer.body.toString(), "got true")
+})

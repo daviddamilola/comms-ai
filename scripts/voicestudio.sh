@@ -45,7 +45,18 @@ case "${1:-}" in
     echo; echo "error: it did not become ready. See $LOG" >&2; exit 1
     ;;
   stop)
-    pkill -f "uvicorn main:app --app-dir backend --host 127.0.0.1 --port $PORT" 2>/dev/null && echo "stopped" || echo "not running"
+    # The backend finishes its current job before honouring a polite stop, and
+    # a line can take minutes: ask, wait briefly, then insist. A backend left
+    # running keeps the model in memory and answers /health for the next one.
+    pattern="uvicorn main:app --app-dir backend --host 127.0.0.1 --port $PORT"
+    pgrep -f "$pattern" >/dev/null 2>&1 || { echo "not running"; exit 0; }
+    pkill -f "$pattern" 2>/dev/null || true
+    i=0
+    while [ $i -lt 10 ] && pgrep -f "$pattern" >/dev/null 2>&1; do sleep 1; i=$((i + 1)); done
+    if pgrep -f "$pattern" >/dev/null 2>&1; then pkill -9 -f "$pattern" 2>/dev/null || true; sleep 1; fi
+    pids="$(lsof -ti "tcp:$PORT" 2>/dev/null || true)"
+    [ -n "$pids" ] && kill -9 $pids 2>/dev/null || true
+    echo "stopped"
     ;;
   status)
     h="$(health)"; [ -n "$h" ] && echo "$h" || { echo "not running"; exit 1; }

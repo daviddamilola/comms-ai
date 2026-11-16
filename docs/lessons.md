@@ -37,6 +37,9 @@ it does not happen again.
 | The default cloning model turned out to be non-commercial, discovered just before generating an advert. | The voice guide lists each engine's licence; examples use the Apache-2.0 engine. |
 | The cloning model crawled (100 s per step) because Docker held the memory. | The voice step warns on machines with 16 GB or less; the guide says what to quit. |
 | Regenerating one bad line meant regenerating all of them. | Lines are cached by text and voice settings; `--redo 3,5` regenerates chosen lines. |
+| The first cloned line through this tool died with "fetch failed" after exactly five minutes: Node's `fetch` gives up when a server takes that long to answer, and a cold model does. | Voice requests use a plain HTTP request that waits as long as `voice.timeout` allows (30 minutes by default). |
+| Docker Desktop was asked to quit but was still running, and the model crawled again. | The memory warning names what is actually running ("Docker Desktop is running: quit it first"). |
+| Stopping the voice backend left the old one alive, finishing a job; the next start found it "ready" and two copies of the model were loaded. | `scripts/voicestudio.sh stop` asks, waits, then force-stops, and clears whatever still holds the port. |
 | An HTTP error body could have been saved as "audio.wav". | Responses are checked before saving, and every audio file is probed before use. |
 | Acronyms were read as words. | `voice.pronounce` rewrites words for the voice only. |
 
