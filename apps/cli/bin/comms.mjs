@@ -37,7 +37,7 @@ function parse(argv) {
     const arg = argv[i]
     if (!arg.startsWith("--")) { rest.push(arg); continue }
     const name = arg.slice(2)
-    if (["force", "keep-frames", "no-voice", "no-open", "help"].includes(name)) flags[name] = true
+    if (["force", "keep-frames", "no-voice", "no-open", "no-voicestudio", "help"].includes(name)) flags[name] = true
     else flags[name] = argv[++i]
   }
   return { flags, rest }
@@ -86,6 +86,15 @@ async function main() {
     log(`studio for ${file}`)
     log(`  ${url}   (Ctrl+C to stop)`)
     if (!flags["no-open"] && process.platform === "darwin") (await import("node:child_process")).spawn("open", [url], { stdio: "ignore", detached: true }).unref()
+    // The cloned-voice backend comes up with the Studio and goes down with it
+    // (it holds several GB), unless it was already running before.
+    if (!flags["no-voicestudio"]) {
+      const stop = (await import("../src/voicestudio.mjs")).startVoiceStudio(log)
+      for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, () => {
+        if (stop()) log("  VoiceStudio stopped")
+        process.exit(signal === "SIGINT" ? 130 : 143)
+      })
+    }
     return
   }
 

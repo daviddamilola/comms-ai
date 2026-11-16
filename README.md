@@ -116,7 +116,7 @@ lines are still done from the command line.
 | `comms voice <project>` | Generates the voiceover only; `--redo 3,5` regenerates lines |
 | `comms build <project>` | Voice, music and render; `--redo 3,5`, `--no-voice` |
 | `comms sheet <video>` | Contact sheet of any video; `--every 5` |
-| `comms ui <project>` | Opens the Studio; `--port 4400`, `--no-open` |
+| `comms ui <project>` | Opens the Studio and starts VoiceStudio if it is installed (stopping it again on exit if it was not already running); `--port 4400`, `--no-open`, `--no-voicestudio` |
 
 Every command exits non-zero when it fails.
 
