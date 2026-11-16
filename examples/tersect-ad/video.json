@@ -1,0 +1,72 @@
+{
+  "title": "Tersect Browser: join the waitlist",
+  "size": [1440, 860],
+  "theme": { "brand": "Tersect Browser", "accent": "#4fcf85" },
+  "voice": { "engine": "recorded", "folder": "voice", "pronounce": { "DOI": "D O I" } },
+  "music": { "synth": true, "volume": 0.32 },
+  "recordings": {
+    "plot": {
+      "url": "http://localhost:4200/TersectBrowserGP/",
+      "colorScheme": "dark",
+      "localStorage": { "theme": "dark" },
+      "steps": [
+        { "click": "Tomato SL2.50" },
+        { "wait": { "for": { "selector": "canvas" } }, "timeout": 60, "pause": 4 },
+        { "move": [420, 300] }, { "move": [700, 420] }, { "move": [960, 360] }, { "move": [1160, 440] },
+        { "click": { "label": "Phenetic tree" }, "pause": 4.5 },
+        { "move": [110, 400], "pause": 1.8 },
+        { "click": "Gene track", "pause": 4.5 },
+        { "move": [700, 190], "pause": 1.5 },
+        { "click": "Variant search", "pause": 2.5 },
+        { "click": "Search for variants" },
+        { "wait": { "text": "HIGH-impact variants" }, "timeout": 60, "pause": 3 },
+        { "move": [760, 420], "pause": 2.5 }
+      ]
+    }
+  },
+  "scenes": [
+    { "type": "card", "title": "Finding introgressions\nin your own genomes", "accent": "shouldn't take a bioinformatics team.",
+      "say": "Finding introgressions in your own genomes shouldn't take a bioinformatics team." },
+    { "type": "card", "brand": true, "title": "Compare genomes along a chromosome.", "subtitle": "In your browser. On your own data.", "seconds": 3.4 },
+
+    { "type": "clip", "src": "clips/plot.mp4", "from": 6, "to": 18, "speed": 1.3,
+      "caption": "Every accession against any reference, bin by bin",
+      "say": "Tersect Browser compares every accession against any reference, bin by bin, along the chromosome." },
+    { "type": "clip", "src": "clips/plot.mp4", "from": 18, "to": 33, "speed": 1.6,
+      "caption": "Similarity trees, gene models and variant effects in one view",
+      "say": "Similarity trees, gene models and variant effects sit in one view." },
+    { "type": "clip", "src": "clips/plot.mp4", "from": 42, "to": 48,
+      "caption": "Search variants by impact or gene, highlighted across every accession",
+      "say": "Search variants by impact or by gene, and see them across every accession." },
+
+    { "type": "card", "title": "Most genome browsers show\nthe data they ship with.", "accent": "This one loads yours.",
+      "say": "Most genome browsers show the data they ship with. This one loads yours." },
+
+    { "type": "clip", "src": "footage/assistant.mp4", "from": 14, "to": 25, "speed": 1.6,
+      "caption": "Describe your dataset, or paste a paper's DOI",
+      "say": "Describe your dataset, or paste a paper's DOI." },
+    { "type": "clip", "src": "footage/assistant.mp4", "from": 28, "to": 50, "speed": 2.6,
+      "caption": "A local AI model drafts the reference, accessions and options",
+      "say": "An assistant running on a local model drafts the reference, the accessions and the options." },
+    { "type": "clip", "src": "footage/assistant.mp4", "from": 50, "to": 88, "speed": 4.5,
+      "caption": "Every suggestion is checked by the server before you accept it",
+      "say": "Every suggestion is checked by the server before you accept it." },
+    { "type": "clip", "src": "footage/assistant.mp4", "from": 103, "to": 113, "speed": 1.6,
+      "caption": "Validated before anything is built",
+      "say": "The manifest is validated before anything is built." },
+    { "type": "clip", "src": "footage/assistant.mp4", "from": 115, "to": 124, "speed": 2,
+      "caption": "One click: download, normalise, index, annotate",
+      "say": "Then one click downloads, normalises, indexes and annotates." },
+    { "type": "clip", "src": "footage/build.mp4", "from": 14.5, "to": 24, "speed": 1.6,
+      "caption": "One click: download, normalise, index, annotate" },
+    { "type": "clip", "src": "footage/build.mp4", "from": 26, "to": 38, "speed": 1.5,
+      "caption": "Minutes later, it's in the browser",
+      "say": "Minutes later, your dataset is in the browser." },
+
+    { "type": "card", "title": "Self-hosted.", "accent": "Your data stays on your machines.",
+      "subtitle": "The assistant runs on a local model: no paper, file name\nor genotype is sent anywhere.",
+      "say": "It's self-hosted, so your data stays on your machines.", "seconds": 4.8 },
+    { "type": "card", "brand": true, "title": "From VCFs to introgression maps,\nwithout the command line.", "button": "Join the waitlist",
+      "say": "Tersect Browser. Join the waitlist.", "seconds": 5.5 }
+  ]
+}
