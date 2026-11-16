@@ -1,15 +1,18 @@
 {
   "name": "comms-ai",
   "version": "0.1.0",
-  "description": "Content creation pipeline for software makers: record a product, add cards, captions, voiceover and music, render a video.",
+  "description": "Content creation pipeline for software makers: a command line (apps/cli) and a local studio UI (apps/studio).",
   "type": "module",
-  "bin": { "comms": "bin/comms.mjs" },
+  "private": true,
+  "workspaces": ["apps/*"],
+  "bin": { "comms": "apps/cli/bin/comms.mjs" },
   "engines": { "node": ">=22" },
   "scripts": {
-    "test": "node --test test/*.test.mjs",
-    "doctor": "node bin/comms.mjs doctor",
-    "demo": "node bin/comms.mjs record examples/demo && node bin/comms.mjs build examples/demo"
+    "test": "npm test --workspaces --if-present",
+    "doctor": "node apps/cli/bin/comms.mjs doctor",
+    "demo": "node apps/cli/bin/comms.mjs record examples/demo && node apps/cli/bin/comms.mjs build examples/demo",
+    "build": "npm run build --workspace @comms-ai/studio",
+    "studio": "node apps/cli/bin/comms.mjs ui"
   },
-  "license": "UNLICENSED",
-  "private": true
+  "license": "UNLICENSED"
 }

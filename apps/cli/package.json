@@ -1,0 +1,15 @@
+{
+  "name": "@comms-ai/cli",
+  "version": "0.1.0",
+  "description": "Make product videos from recordings, screenshots and a script.",
+  "type": "module",
+  "private": true,
+  "bin": { "comms": "bin/comms.mjs" },
+  "exports": {
+    "./config": "./src/config.mjs",
+    "./text": "./src/text.mjs",
+    "./util": "./src/util.mjs"
+  },
+  "engines": { "node": ">=22" },
+  "scripts": { "test": "node --test test/*.test.mjs" }
+}
