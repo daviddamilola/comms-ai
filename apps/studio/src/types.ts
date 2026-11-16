@@ -4,6 +4,8 @@ export type SceneType = "card" | "clip" | "image"
 export interface Scene {
   type: SceneType
   say?: string
+  /** A recording of this scene's line, used instead of the generated voice. */
+  sayFile?: string
   caption?: string
   // card
   title?: string
@@ -50,6 +52,7 @@ export interface Loaded {
   file: string
   root: string
   project: Project
+  version: string
   problems: string[]
   defaults: { voiceEngines: string[]; theme: Record<string, string>; voice: Record<string, unknown>; music: Record<string, unknown> }
 }

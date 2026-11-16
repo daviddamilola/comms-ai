@@ -7,7 +7,7 @@ import { Storyboard } from "./components/Storyboard"
 import { blank, move } from "./scenes"
 import type { Loaded, MediaFile, Project, Report, Scene, SceneType } from "./types"
 
-type SaveState = "saved" | "saving" | "unsaved" | "error"
+type SaveState = "saved" | "saving" | "unsaved" | "error" | "conflict"
 
 export function App() {
   const [loaded, setLoaded] = useState<Loaded | null>(null)
@@ -25,11 +25,12 @@ export function App() {
   const [withVoice, setWithVoice] = useState(true)
   const [seek, setSeek] = useState<{ at: number; tick: number } | null>(null)
   const history = useRef<Project[]>([])
+  const version = useRef("")
   const [canUndo, setCanUndo] = useState(false)
 
   /* load */
   useEffect(() => {
-    loadProject().then((data) => { setLoaded(data); setProject(data.project); setSaved(data.project); setProblems(data.problems) }).catch((error: Error) => setFatal(error.message))
+    loadProject().then((data) => { version.current = data.version; setLoaded(data); setProject(data.project); setSaved(data.project); setProblems(data.problems) }).catch((error: Error) => setFatal(error.message))
     loadFiles().then(setFiles).catch(() => {})
     loadReport().then(setReport).catch(() => {})
     // A build started before this page was opened (or reloaded) is picked up.
@@ -38,15 +39,17 @@ export function App() {
 
   /* save a moment after the last change */
   useEffect(() => {
-    if (!project || project === saved) return
+    if (!project || project === saved || saveState === "conflict") return
     setSaveState("unsaved")
     const timer = setTimeout(() => {
       setSaveState("saving")
-      saveProject(project)
-        .then((result) => { setSaved(project); setProblems(result.problems); setSaveState("saved"); loadReport().then(setReport).catch(() => {}) })
-        .catch(() => setSaveState("error"))
+      saveProject(project, version.current)
+        .then((result) => { version.current = result.version; setSaved(project); setProblems(result.problems); setSaveState("saved"); loadReport().then(setReport).catch(() => {}) })
+        .catch((error: Error & { conflict?: boolean }) => setSaveState(error.conflict ? "conflict" : "error"))
     }, 500)
     return () => clearTimeout(timer)
+    // saveState is left out on purpose: this runs when the project changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [project, saved])
 
   /* follow a running build */
@@ -109,7 +112,7 @@ export function App() {
   }
 
   const blocked = saveState !== "saved" || problems.length > 0
-  const status = { saved: "Saved", saving: "Saving…", unsaved: "Saving…", error: "Not saved: the studio server is not answering" }[saveState]
+  const status = { saved: "Saved", saving: "Saving…", unsaved: "Saving…", error: "Not saved: the studio server is not answering", conflict: "Not saved" }[saveState]
 
   return (
     <div className="app">
@@ -128,6 +131,13 @@ export function App() {
           {building ? "Building…" : "Build video"}
         </button>
       </header>
+
+      {saveState === "conflict" && (
+        <div className="notice warning" role="alert">
+          <strong>This page is out of date.</strong> The project file was changed somewhere else (another tab, the command line or an editor), so your last change here was not saved. Reload to continue from the current version.{" "}
+          <button type="button" onClick={() => window.location.reload()}>Reload the project</button>
+        </div>
+      )}
 
       {problems.length > 0 && (
         <div className="notice warning problems" role="alert">

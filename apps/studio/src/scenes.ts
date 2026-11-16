@@ -11,7 +11,7 @@ export function move<T>(items: T[], from: number, to: number): T[] {
   return next
 }
 
-const SHARED = ["say", "caption"] as const
+const SHARED = ["say", "sayFile", "caption"] as const
 const OWN: Record<SceneType, (keyof Scene)[]> = {
   card: ["title", "accent", "subtitle", "brand", "button", "note", "seconds"],
   clip: ["src", "from", "to", "speed"],

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { test } from "node:test"
@@ -54,5 +54,41 @@ test("the server reads and saves the project, and refuses other sites", async ()
     assert.equal((await fetch(`${base}/api/media?path=${encodeURIComponent("../../etc/hosts")}`)).status, 404)
     const blocked = await fetch(`${base}/api/build`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" })
     assert.equal(blocked.status, 400, "a project with problems is not built")
+  } finally { studio.server.closeAllConnections(); studio.server.close() }
+})
+
+test("a save from an out-of-date page is refused, and recordings are stored in the project", async () => {
+  const root = project()
+  const studio = await startStudio(root, { port: 0 })
+  const base = studio.url.replace(/\/$/, "")
+  try {
+    const { project: loaded, version } = await (await fetch(`${base}/api/project`)).json()
+    const put = (body, baseVersion) => fetch(`${base}/api/project`, { method: "PUT", headers: { "content-type": "application/json", "x-base-version": baseVersion }, body: JSON.stringify(body) })
+    const first = await put({ ...loaded, title: "First" }, version)
+    assert.equal(first.status, 200)
+    const next = (await first.json()).version
+    assert.notEqual(next, version)
+
+    const stale = await put({ ...loaded, title: "From a stale page" }, version)
+    assert.equal(stale.status, 409)
+    assert.equal((await stale.json()).conflict, true)
+    assert.equal(JSON.parse(readFileSync(join(root, "video.json"), "utf8")).title, "First")
+    assert.equal((await put({ ...loaded, title: "Second" }, next)).status, 200)
+
+    const upload = (body, type) => fetch(`${base}/api/voice`, { method: "POST", headers: { "content-type": type }, body })
+    assert.equal((await upload(Buffer.alloc(500), "text/plain")).status, 415)
+    assert.equal((await upload(Buffer.alloc(10), "audio/webm")).status, 400)
+    const junk = await upload(Buffer.alloc(5000, 7), "audio/webm")
+    assert.equal(junk.status, 400, "bytes that are not audio are rejected")
+    assert.deepEqual(readdirSync(join(root, "voice", "recordings")), [], "and not kept")
+
+    // A real, tiny WAV: 0.25 s of silence.
+    const samples = 2000, wav = Buffer.alloc(44 + samples * 2)
+    wav.write("RIFF", 0); wav.writeUInt32LE(36 + samples * 2, 4); wav.write("WAVEfmt ", 8); wav.writeUInt32LE(16, 16); wav.writeUInt16LE(1, 20); wav.writeUInt16LE(1, 22)
+    wav.writeUInt32LE(8000, 24); wav.writeUInt32LE(16000, 28); wav.writeUInt16LE(2, 32); wav.writeUInt16LE(16, 34); wav.write("data", 36); wav.writeUInt32LE(samples * 2, 40)
+    const saved = await (await upload(wav, "audio/wav")).json()
+    assert.match(saved.path, /^voice\/recordings\/.+\.wav$/)
+    assert.ok(Math.abs(saved.seconds - 0.25) < 0.01)
+    assert.equal((await fetch(`${base}/api/media?path=${encodeURIComponent(saved.path)}`)).status, 200)
   } finally { studio.server.closeAllConnections(); studio.server.close() }
 })

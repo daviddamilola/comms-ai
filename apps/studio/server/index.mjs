@@ -4,7 +4,7 @@
 // It listens on 127.0.0.1 only and has no accounts: it can read the project
 // folder and run builds, so it must never be reachable from another machine.
 import { spawn } from "node:child_process"
-import { createReadStream, existsSync, readFileSync, readdirSync, renameSync, statSync, writeFileSync } from "node:fs"
+import { createReadStream, existsSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { createServer } from "node:http"
 import { dirname, extname, join, relative, resolve, sep } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -17,6 +17,7 @@ const DIST = join(HERE, "..", "dist")
 const CLI = join(HERE, "..", "..", "cli", "bin", "comms.mjs")
 const TYPES = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json",
+  ".webmanifest": "application/manifest+json",
   ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp",
   ".mp4": "video/mp4", ".mov": "video/quicktime", ".webm": "video/webm", ".m4v": "video/mp4",
   ".wav": "audio/wav", ".m4a": "audio/mp4", ".mp3": "audio/mpeg",
@@ -67,6 +68,17 @@ export function createStudio(projectArg) {
   if (!existsSync(file)) throw new UserError(`no project at ${file}. Create one with \`comms init <folder>\`.`)
   const root = dirname(file)
   const readRaw = () => JSON.parse(readFileSync(file, "utf8"))
+  // What the file holds right now, as a short fingerprint. A page sends back
+  // the one it loaded, so a save from a page that is out of date is refused
+  // instead of silently undoing changes made elsewhere.
+  const version = () => sha(readFileSync(file))
+  const AUDIO = { "audio/webm": ".webm", "audio/mp4": ".m4a", "audio/ogg": ".ogg", "audio/wav": ".wav", "audio/x-wav": ".wav", "audio/mpeg": ".mp3" }
+  const bytes = (request, limit) => new Promise((resolveBytes, reject) => {
+    const chunks = []; let size = 0
+    request.on("data", (chunk) => { size += chunk.length; if (size > limit) { reject(new UserError("the recording is too large")); request.destroy() } else chunks.push(chunk) })
+    request.on("end", () => resolveBytes(Buffer.concat(chunks)))
+    request.on("error", reject)
+  })
   const problemsOf = (raw) => { try { return validate(normalise(raw, root)) } catch (error) { return [error.message] } }
   const job = { running: false, lines: [], code: null, startedAt: null, listeners: new Set() }
 
@@ -157,16 +169,33 @@ export function createStudio(projectArg) {
     const path = url.pathname
     if (path === "/api/project" && request.method === "GET") {
       const raw = readRaw()
-      return json(response, 200, { file, root, project: raw, problems: problemsOf(raw), defaults: { size: DEFAULTS.size, theme: DEFAULTS.theme, voice: DEFAULTS.voice, music: DEFAULTS.music, voiceEngines: VOICE_ENGINES } })
+      return json(response, 200, { file, root, project: raw, version: version(), problems: problemsOf(raw), defaults: { size: DEFAULTS.size, theme: DEFAULTS.theme, voice: DEFAULTS.voice, music: DEFAULTS.music, voiceEngines: VOICE_ENGINES } })
     }
     if (path === "/api/project" && request.method === "PUT") {
       let raw
       try { raw = JSON.parse(await body(request)) } catch { return json(response, 400, { error: "the project could not be read as JSON" }) }
       if (!raw || typeof raw !== "object" || Array.isArray(raw) || !Array.isArray(raw.scenes)) return json(response, 400, { error: "a project needs a list of scenes" })
+      const base = request.headers["x-base-version"]
+      if (base && base !== version()) return json(response, 409, { error: "the project was changed outside this page since it was loaded", conflict: true })
       // Write beside the file, then swap: a crash never leaves half a project.
       writeFileSync(`${file}.tmp`, JSON.stringify(raw, null, 2) + "\n")
       renameSync(`${file}.tmp`, file)
-      return json(response, 200, { problems: problemsOf(raw) })
+      return json(response, 200, { problems: problemsOf(raw), version: version() })
+    }
+    if (path === "/api/voice" && request.method === "POST") {
+      // One spoken line recorded in the page. Kept as recorded; the build
+      // trims and levels it like any other voice line.
+      const extension = AUDIO[(request.headers["content-type"] ?? "").split(";")[0].trim()]
+      if (!extension) return json(response, 415, { error: "that is not an audio recording this server understands" })
+      const data = await bytes(request, 60e6)
+      if (data.length < 200) return json(response, 400, { error: "the recording is empty" })
+      const folder = ensureDir(join(root, "voice", "recordings"))
+      const name = `${new Date().toISOString().replace(/[-:]/g, "").slice(0, 15)}-${sha(data).slice(0, 6)}${extension}`
+      const target = join(folder, name)
+      writeFileSync(target, data)
+      let seconds
+      try { seconds = duration(target) } catch { rmSync(target, { force: true }); return json(response, 400, { error: "the recording could not be read as audio" }) }
+      return json(response, 200, { path: `voice/recordings/${name}`, seconds })
     }
     if (path === "/api/files") return json(response, 200, { files: listMedia(root) })
     if (path === "/api/report") return json(response, 200, { report: report() })

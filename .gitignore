@@ -13,3 +13,4 @@ apps/studio/dist/
 # The real-world example's inputs are not redistributable.
 examples/tersect-ad/footage/
 examples/tersect-ad/voice/
+**/voice/recordings/

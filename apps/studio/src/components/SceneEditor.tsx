@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import { mediaUrl } from "../api"
 import { retype, withField } from "../scenes"
+import { VoiceRecorder } from "./VoiceRecorder"
 import type { MediaFile, Scene, SceneType } from "../types"
 
 interface Props {
@@ -123,6 +124,12 @@ export function SceneEditor({ scene, index, count, files, onChange, onMove, onDu
         <Field label="Voiceover" hint="Spoken during this scene. The scene stretches to fit it." wide>
           <textarea rows={2} value={scene.say ?? ""} onChange={(event) => set("say", event.target.value)} placeholder="Leave empty for no voice in this scene." />
         </Field>
+        {(scene.say ?? "").trim() || scene.sayFile ? (
+          <div className="field wide">
+            <span className="field-label">Your recording</span>
+            <VoiceRecorder path={scene.sayFile} line={scene.say ?? ""} onChange={(path) => set("sayFile", path)} />
+          </div>
+        ) : null}
       </div>
     </section>
   )

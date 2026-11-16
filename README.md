@@ -100,10 +100,15 @@ opens a page in your browser for that project:
   listed, and the button stays off until they are fixed.
 - **Video settings**: title, brand, accent colour, voice and music.
 
+- **Record a line**: under a scene's voiceover, record that line with your
+  microphone, listen back, redo or remove it. The recording replaces the
+  generated voice for that line only.
+
 The Studio edits the same `video.json` and runs the same commands as the
-command line, so you can switch between them freely. It listens on your own
-machine only (`127.0.0.1`). Recording your app and re-doing single voice
-lines are still done from the command line.
+command line, so you can switch between them freely. If the file changes
+somewhere else while the page is open, the page says so and asks you to
+reload rather than saving over the change. It listens on your own machine
+only (`127.0.0.1`). Filming your app is still done from the command line.
 
 ## Commands
 

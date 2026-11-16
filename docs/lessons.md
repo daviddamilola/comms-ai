@@ -44,6 +44,15 @@ it does not happen again.
 | An HTTP error body could have been saved as "audio.wav". | Responses are checked before saving, and every audio file is probed before use. |
 | Acronyms were read as words. | `voice.pronounce` rewrites words for the voice only. |
 
+## The Studio
+
+| What went wrong | What the tool does |
+|---|---|
+| A Studio tab left open saved its older copy over corrections made from the command line, twice, undoing a fixed voice line. | Every save carries the version the page loaded; the server refuses a save from an out-of-date page and the page asks you to reload. |
+| The page compiled, then crashed on load on a build report written by an older version. | The server fills in what older reports lack, and the page is checked by loading it in a browser, not by compiling it. |
+| Two agents built the same app at once and overwrote each other's files. | One owner per app at a time (see AGENTS.md). |
+| Fixing one word meant regenerating a cloned line through a separate backend for twelve minutes. | Any line can be re-recorded with the microphone from the Studio, or given its own file with `sayFile`. |
+
 ## Still manual
 
 - Listening. The tool measures loudness; it cannot hear whether a cloned
