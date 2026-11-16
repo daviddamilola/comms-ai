@@ -1,0 +1,26 @@
+{
+  "name": "@comms-ai/studio",
+  "version": "0.1.0",
+  "description": "A local web UI over comms: storyboard, scene editor, build and preview.",
+  "type": "module",
+  "private": true,
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.4.1",
+    "typescript": "^5.8.3",
+    "vite": "^6.3.5"
+  },
+  "license": "UNLICENSED"
+}
