@@ -74,6 +74,8 @@ test("a save from an out-of-date page is refused, and recordings are stored in t
     assert.equal((await stale.json()).conflict, true)
     assert.equal(JSON.parse(readFileSync(join(root, "video.json"), "utf8")).title, "First")
     assert.equal((await put({ ...loaded, title: "Second" }, next)).status, 200)
+    const oldTab = await fetch(`${base}/api/project`, { method: "PUT", headers: { "content-type": "application/json", origin: base }, body: JSON.stringify({ ...loaded, title: "Old tab" }) })
+    assert.equal(oldTab.status, 409, "a browser save without a version comes from an outdated page")
 
     const upload = (body, type) => fetch(`${base}/api/voice`, { method: "POST", headers: { "content-type": type }, body })
     assert.equal((await upload(Buffer.alloc(500), "text/plain")).status, 415)

@@ -176,7 +176,9 @@ export function createStudio(projectArg) {
       try { raw = JSON.parse(await body(request)) } catch { return json(response, 400, { error: "the project could not be read as JSON" }) }
       if (!raw || typeof raw !== "object" || Array.isArray(raw) || !Array.isArray(raw.scenes)) return json(response, 400, { error: "a project needs a list of scenes" })
       const base = request.headers["x-base-version"]
-      if (base && base !== version()) return json(response, 409, { error: "the project was changed outside this page since it was loaded", conflict: true })
+      // A browser always sends Origin with a save. One that sends no version
+      // is a tab still running an older copy of the page: refuse it too.
+      if ((base || request.headers.origin) && base !== version()) return json(response, 409, { error: "the project was changed outside this page since it was loaded", conflict: true })
       // Write beside the file, then swap: a crash never leaves half a project.
       writeFileSync(`${file}.tmp`, JSON.stringify(raw, null, 2) + "\n")
       renameSync(`${file}.tmp`, file)
