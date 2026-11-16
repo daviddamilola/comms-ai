@@ -1,4 +1,5 @@
 node_modules/
+apps/studio/dist/
 .DS_Store
 # Per-project build products. Sources (video.json, script, media you add) stay.
 **/.cache/

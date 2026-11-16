@@ -26,6 +26,7 @@ const HELP = `comms: make product videos from recordings, screenshots and a scri
       --redo 3,5   --no-voice
   comms build <project>               voice + render (the usual command)
   comms sheet <video> [--every 5]     contact sheet of any video
+  comms ui <project> [--port 4400]    open the studio: storyboard, editor, build, preview
 
 <project> is a folder containing video.json (default: the current folder).
 Docs: README.md, docs/project.md, docs/recording.md, docs/voice.md`
@@ -36,7 +37,7 @@ function parse(argv) {
     const arg = argv[i]
     if (!arg.startsWith("--")) { rest.push(arg); continue }
     const name = arg.slice(2)
-    if (["force", "keep-frames", "no-voice", "help"].includes(name)) flags[name] = true
+    if (["force", "keep-frames", "no-voice", "no-open", "help"].includes(name)) flags[name] = true
     else flags[name] = argv[++i]
   }
   return { flags, rest }
@@ -73,6 +74,19 @@ async function main() {
     const out = rest[0].replace(/\.[^.]+$/, "") + ".sheet.png"
     ffmpeg(["-i", rest[0], "-vf", `fps=1/${every},scale=480:-2,tile=5x${Math.ceil(count / 5)}:padding=6`, "-frames:v", "1", out])
     return log(`${out}: one frame every ${every} s, left to right, top to bottom`)
+  }
+
+  if (command === "ui") {
+    // The studio is a separate app in this repository; load it only when asked.
+    let studio
+    try { studio = await import("../../studio/server/index.mjs") } catch (error) {
+      throw new UserError(`the studio app could not be loaded (${error.message}). It lives in apps/studio of the comms-ai repository.`)
+    }
+    const { url, file } = await studio.startStudio(rest[0], { port: Number(flags.port ?? 4400) })
+    log(`studio for ${file}`)
+    log(`  ${url}   (Ctrl+C to stop)`)
+    if (!flags["no-open"] && process.platform === "darwin") (await import("node:child_process")).spawn("open", [url], { stdio: "ignore", detached: true }).unref()
+    return
   }
 
   const project = loadProject(rest[0])
