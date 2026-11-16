@@ -1,0 +1,15 @@
+{
+  "name": "comms-ai",
+  "version": "0.1.0",
+  "description": "Content creation pipeline for software makers: record a product, add cards, captions, voiceover and music, render a video.",
+  "type": "module",
+  "bin": { "comms": "bin/comms.mjs" },
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "doctor": "node bin/comms.mjs doctor",
+    "demo": "node bin/comms.mjs record examples/demo && node bin/comms.mjs build examples/demo"
+  },
+  "license": "UNLICENSED",
+  "private": true
+}

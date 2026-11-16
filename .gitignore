@@ -1,0 +1,14 @@
+node_modules/
+.DS_Store
+# Per-project build products. Sources (video.json, script, media you add) stay.
+**/.cache/
+**/out/
+**/clips/*.mp4
+**/clips/*.log
+**/clips/*.png
+# Voice references are personal data: never commit them.
+**/voice/reference.*
+**/voice/takes/
+# The real-world example's inputs are not redistributable.
+examples/tersect-ad/footage/
+examples/tersect-ad/voice/
