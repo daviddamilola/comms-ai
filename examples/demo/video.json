@@ -1,0 +1,27 @@
+{
+  "title": "Orbit",
+  "size": [1280, 720],
+  "theme": { "brand": "Orbit", "accent": "#4fcf85" },
+  "voice": { "engine": "say", "voice": "Daniel", "rate": 172, "pronounce": { "PRs": "P Rs" } },
+  "music": { "synth": true, "volume": 0.32 },
+  "recordings": {
+    "tour": {
+      "url": "site/index.html",
+      "colorScheme": "dark",
+      "steps": [
+        { "sleep": 1.5 },
+        { "type": "comms-ai", "into": { "selector": "#project" } },
+        { "click": "Summarise" },
+        { "wait": { "text": "Summary ready" }, "speed": 4, "timeout": 30 },
+        { "hover": { "selector": "#results li", "nth": 1 } },
+        { "sleep": 2 }
+      ]
+    }
+  },
+  "scenes": [
+    { "type": "card", "title": "Nobody has time to read\nevery pull request.", "accent": "So nobody knows what shipped.", "say": "Nobody has time to read every pull request. So nobody knows what shipped." },
+    { "type": "card", "brand": true, "title": "One summary. Every week.", "subtitle": "This is a made-up product, used to test the pipeline." },
+    { "type": "clip", "src": "clips/tour.mp4", "caption": "Name a project, get the week in numbers", "say": "Name a project, and Orbit reads the week's activity for you: merged PRs, closed issues and deploys." },
+    { "type": "card", "brand": true, "title": "Know what shipped.", "button": "Join the waitlist", "note": "example.com/orbit", "say": "Orbit. Join the waitlist." }
+  ]
+}

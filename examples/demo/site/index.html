@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Orbit: demo app</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; font-family: -apple-system, "Helvetica Neue", "Segoe UI", sans-serif; background: #0d1210; color: #f4f5f4; }
+  header { display: flex; align-items: center; gap: 12px; padding: 14px 24px; border-bottom: 1px solid #222a25; font-weight: 700; }
+  header i { width: 14px; height: 14px; border-radius: 50%; background: #4fcf85; }
+  main { max-width: 760px; margin: 60px auto; padding: 0 24px; }
+  h1 { font-size: 34px; margin: 0 0 8px; letter-spacing: -.5px; }
+  p { color: #a8b0aa; line-height: 1.5; }
+  input { width: 100%; box-sizing: border-box; margin: 22px 0 14px; padding: 14px 16px; font-size: 17px; border-radius: 10px; border: 1px solid #2c362f; background: #131a16; color: inherit; }
+  button { font-size: 16px; font-weight: 700; padding: 12px 22px; border-radius: 10px; border: 0; background: #4fcf85; color: #07130c; cursor: pointer; }
+  button:disabled { opacity: .4; cursor: default; }
+  .bar { height: 8px; border-radius: 4px; background: #1b231e; margin: 28px 0 10px; overflow: hidden; }
+  .bar b { display: block; height: 100%; width: 0; background: #4fcf85; transition: width .3s linear; }
+  ul { list-style: none; padding: 0; margin: 26px 0 0; display: none; }
+  li { padding: 14px 16px; border: 1px solid #222a25; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; }
+  li span { color: #4fcf85; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<header><i></i>Orbit</header>
+<main>
+  <h1>Find what changed</h1>
+  <p>Type a project name and Orbit summarises what changed this week.</p>
+  <input id="project" placeholder="Project name" aria-label="Project name">
+  <button id="go" disabled>Summarise</button>
+  <div class="bar"><b id="fill"></b></div>
+  <p id="status">Waiting for a project.</p>
+  <ul id="results">
+    <li>Pull requests merged <span>14</span></li>
+    <li>Issues closed <span>9</span></li>
+    <li>Deploys <span>6</span></li>
+  </ul>
+</main>
+<script>
+  const input = document.getElementById("project"), go = document.getElementById("go")
+  input.addEventListener("input", () => { go.disabled = !input.value.trim() })
+  go.addEventListener("click", () => {
+    go.disabled = true
+    const status = document.getElementById("status"), fill = document.getElementById("fill")
+    let done = 0
+    status.textContent = "Reading the week's activity..."
+    const timer = setInterval(() => {
+      done += 4; fill.style.width = done + "%"
+      if (done >= 100) { clearInterval(timer); status.textContent = "Summary ready"; document.getElementById("results").style.display = "block" }
+    }, 250)
+  })
+</script>
+</body>
+</html>
