@@ -183,7 +183,13 @@ async function voiceStudio(project, voice) {
       if (voice.seed != null) form.set("seed", String(voice.seed))
       const response = await postForm(`${url}/generate`, form, (voice.timeout ?? 1800) * 1000)
       // Check the status before saving: an error body saved as .wav is not audio.
-      if (response.status !== 200) throw new Error(`VoiceStudio failed on "${text.slice(0, 40)}": ${response.status} ${response.body.toString("utf8").slice(0, 300)}`)
+      if (response.status !== 200) {
+        let detail = response.body.toString("utf8")
+        try { detail = JSON.parse(detail).detail ?? detail } catch {}
+        const slow = /abandoned|compute time/.test(detail)
+        throw new UserError(`VoiceStudio could not generate "${text.slice(0, 40)}..." (HTTP ${response.status}): ${String(detail).slice(0, 400)}` +
+          (slow ? `\n  The machine is too short of memory for this model right now. Restart the backend (scripts/voicestudio.sh stop, then start: it allows 30 minutes a line), close other apps and try again; finished lines are cached.` : ""))
+      }
       writeFileSync(out, response.body)
     },
   }

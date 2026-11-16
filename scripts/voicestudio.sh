@@ -35,7 +35,9 @@ case "${1:-}" in
     cd "$DIR"
     # --no-sync: a plain `uv run` may re-resolve the environment and undo the
     # PyTorch variant chosen at install time.
-    OMNIVOICE_TTS_BACKEND="$ENGINE" nohup uv run --no-sync uvicorn main:app --app-dir backend --host 127.0.0.1 --port "$PORT" >"$LOG" 2>&1 &
+    # The backend abandons a line after 300 s of compute by default, which a
+    # 16 GB machine exceeds while the model warms up. Allow 30 minutes.
+    OMNIVOICE_GENERATE_TIMEOUT_S="${OMNIVOICE_GENERATE_TIMEOUT_S:-1800}" OMNIVOICE_TTS_BACKEND="$ENGINE" nohup uv run --no-sync uvicorn main:app --app-dir backend --host 127.0.0.1 --port "$PORT" >"$LOG" 2>&1 &
     printf "starting"
     i=0
     while [ $i -lt 120 ]; do

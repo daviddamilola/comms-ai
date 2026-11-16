@@ -40,6 +40,7 @@ it does not happen again.
 | The first cloned line through this tool died with "fetch failed" after exactly five minutes: Node's `fetch` gives up when a server takes that long to answer, and a cold model does. | Voice requests use a plain HTTP request that waits as long as `voice.timeout` allows (30 minutes by default). |
 | Docker Desktop was asked to quit but was still running, and the model crawled again. | The memory warning names what is actually running ("Docker Desktop is running: quit it first"). |
 | Stopping the voice backend left the old one alive, finishing a job; the next start found it "ready" and two copies of the model were loaded. | `scripts/voicestudio.sh stop` asks, waits, then force-stops, and clears whatever still holds the port. |
+| The backend itself abandoned a line after 300 seconds of compute while the model was still warming up. | `scripts/voicestudio.sh start` allows 30 minutes a line, and the error explains what to do instead of printing a stack trace. |
 | An HTTP error body could have been saved as "audio.wav". | Responses are checked before saving, and every audio file is probed before use. |
 | Acronyms were read as words. | `voice.pronounce` rewrites words for the voice only. |
 
